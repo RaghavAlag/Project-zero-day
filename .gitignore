@@ -2,7 +2,10 @@
 __pycache__/
 node_modules/
 *.pyc
-logs/
-.venv/
+logs/*.txt
+logs/patches/
+users.db
+.DS_Store
 .vscode/
-*.db
+dist/
+build/
