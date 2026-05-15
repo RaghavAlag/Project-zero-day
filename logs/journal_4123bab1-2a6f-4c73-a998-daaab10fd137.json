@@ -1,0 +1,26 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT null, null, sqlite_version(), null --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the response code 200 with a \"status\":\"fail\" message suggests that the application is handling the error and preventing the query results from being returned, likely due to input validation or error suppression. The payload is being injected into the 'username' field of a login form, not an 'id' field, which may have different validation rules or handling mechanisms that prevented the SQLi attack from succeeding.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT null, null, 1337, null --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the UNION SELECT statement is likely being filtered by the application, and the 'id' field is not being targeted as it's a login/ping form, not an ID-based query. The presence of the 'status: fail' response suggests that the application is implementing some form of input validation or error handling to prevent SQL injection attacks.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "`' UNION SELECT null, null, 'admin', null --`",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

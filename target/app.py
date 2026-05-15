@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import sqlite3
 import os
+import subprocess
 import database
 
 app = Flask(__name__)
@@ -23,18 +24,15 @@ def login():
     username = data.get('username', '')
     password = data.get('password', '')
     
-    # INTENTIONAL SQL INJECTION VULNERABILITY
-    query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'"
-    
+    query = "SELECT * FROM users WHERE username=? AND password=?"
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute(query)
+        cursor.execute(query, (username, password))
         rows = cursor.fetchall()
         conn.close()
         
         if rows:
-            # On success, return the full table dump
             users = [dict(row) for row in rows]
             return jsonify({"status": "success", "user": users})
         else:
@@ -48,11 +46,21 @@ def ping():
     data = request.json or {}
     host = data.get('host', '')
     
-    # INTENTIONAL COMMAND INJECTION VULNERABILITY
-    command = "ping -n 1 " + host
-    output = os.popen(command).read()
+    if not host:
+        return jsonify({"status": "error", "message": "Host is required"}), 400
     
-    return jsonify({"output": output})
+    # Validate host input to prevent potential attacks
+    if not host.replace('.', '').replace('-', '').replace('_', '').isalnum():
+        return jsonify({"status": "error", "message": "Invalid host"}), 400
+    
+    command = ["ping", "-n", "1", host]
+    try:
+        output = subprocess.check_output(command).decode('utf-8')
+        return jsonify({"output": output})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "message": "Failed to ping host"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/health', methods=['GET'])
 def health():

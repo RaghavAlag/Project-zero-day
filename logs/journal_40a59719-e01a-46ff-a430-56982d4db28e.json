@@ -1,0 +1,18 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 'admin','password' --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the error message indicates a syntax error near \"admin\", suggesting that the UNION SELECT statement is not being executed as expected, possibly due to the database schema or query structure. The payload is attempting to inject into a field that is likely expecting a string or integer value, rather than a SELECT statement, which is causing the syntax error.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "`' OR 1=1 --`",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

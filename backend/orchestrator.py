@@ -53,6 +53,23 @@ async def run_scan(target_url, vuln_type, broadcast_fn, journal):
                 
         if not breached:
             await broadcast_fn("Red Swarm exhausted all attempts. Target hardened or scope exceeded.", "System", "error")
+        else:
+            # PHASE 7: Blue Swarm Auto-Remediation
+            from agents.architect import run_architect
+            from agents.verifier import run_verifier
+            
+            await broadcast_fn("Breach detected. Activating Blue Swarm for auto-remediation...", "System", "info")
+            
+            # Architect writes the patch
+            await run_architect(vuln_type, payload, broadcast_fn)
+            
+            # Verifier applies the patch and tests it
+            is_secure = await run_verifier(target_url, vuln_type, payload, broadcast_fn)
+            
+            if is_secure:
+                await broadcast_fn("SYSTEM SECURED. Zero-Day Pipeline Complete.", "System", "info")
+            else:
+                await broadcast_fn("REMEDIATION FAILED. Manual intervention required.", "System", "error")
             
     except Exception as e:
         await broadcast_fn(f"Scan failed with error: {str(e)}", "System", "error")
