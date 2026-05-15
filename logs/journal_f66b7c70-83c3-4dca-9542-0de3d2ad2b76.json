@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " OR ''=' --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload `OR ''=' --` failed to breach the SQLi vulnerability because it is likely that the application is handling the error and returning a 200 status code with a fail status, indicating that the payload was detected or mitigated. The comment `--` is attempting to comment out the rest of the query, but the application's handling of the query is preventing the payload from successfully exploiting the vulnerability.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": " OR 'a'='a --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the error message indicates a syntax error near the injected quote, suggesting that the payload is not properly formatted or is being sanitized. This payload is being injected into the 'username' field of a login form, not an 'id' field, and the error response is likely due to the application's handling of the malformed SQL query.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT * FROM sqlite_master WHERE type='table' --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the '--' comment syntax is not supported in SQLite, which is the database management system used by the application. The application is also likely using parameterized queries or prepared statements to prevent SQL injection attacks, making the UNION SELECT statement ineffective.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": " OR 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload 'OR 1=1' failed to breach the SQLi vulnerability because it's likely being treated as a boolean expression in a non-SQL context, such as a conditional statement in the application's login or ping logic. This suggests that the payload is being evaluated as a logical condition rather than an SQL query, preventing the SQLi attack.",
+        "outcome": "failed"
+    }
+]

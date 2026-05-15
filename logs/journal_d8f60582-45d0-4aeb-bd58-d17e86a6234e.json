@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "1' || pg_sleep(10)",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '1' || pg_sleep(10)' is a classic example of a UNION-based SQL injection attempt, which failed due to the database's strict syntax validation. To bypass this, Beta should attempt a TIME-BASED BLIND SQL INJECTION using a technique called 'error-based injection', where a malicious query is crafted to exploit the database's error handling mechanism, potentially revealing sensitive information through error messages.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "BINARY_CHECKSUM(123)=BINARY_CHECKSUM(123)",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload 'BINARY_CHECKSUM(123)=BINARY_CHECKSUM(123)' is a classic example of a NOOP (No Operation) attack, which failed due to the database's inability to return a meaningful result from a self-equal comparison. To bypass this, Beta should attempt a TIME-BASED BLIND SQL INJECTION using a technique called 'ERROR-BASED INJECTION WITH BENCHMARK FUNCTION', where a malicious query is crafted to exploit the database's error handling mechanism and potentially reveal sensitive information through error messages.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "LNNVL(1=1)",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload 'LNNVL(1=1)' is a classic example of a LOGICAL-BASED BLIND SQL INJECTION attempt, which failed due to the database's inability to return a meaningful result from a self-equal comparison. To bypass this, Beta should attempt a TIME-BASED BLIND SQL INJECTION using a technique called 'ERROR-BASED INJECTION WITH BENCHMARK FUNCTION', where a malicious query is crafted to exploit the database's error handling mechanism and potentially reveal sensitive information through error messages.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "`@@CPU_BUSY=@@CPU_BUSY`",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '@@CPU_BUSY=@@CPU_BUSY' is a classic example of a NOOP (No Operation) attack, which failed due to the database's inability to return a meaningful result from a self-equal comparison. To bypass this, Beta should attempt a TIME-BASED BLIND SQL INJECTION using the 'ERROR-BASED INJECTION WITH BENCHMARK FUNCTION' technique, where a malicious query is crafted to exploit the database's error handling mechanism and potentially reveal sensitive information through error messages.",
+        "outcome": "failed"
+    }
+]

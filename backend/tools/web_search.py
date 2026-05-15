@@ -1,8 +1,10 @@
 from tavily import TavilyClient
 import os
 import asyncio
+from tracing import trace
 
-async def search_exploits(query: str, broadcast_fn) -> list[str]:
+@trace(name="Web Search Tool")
+async def search_exploits(query: str, broadcast_fn, trace_context=None) -> list[str]:
     await broadcast_fn(f"Searching for — {query}", "Alpha", "info")
     try:
         client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))

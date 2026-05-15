@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "1' || pg_sleep(10)",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '1' || pg_sleep(10) likely failed due to the database management system being SQLite, which does not support the PostgreSQL-specific `pg_sleep` function, resulting in a syntax error. To bypass this, Beta should try using the SQLite-specific `sqlite3` sleep function or attempt a time-based blind SQL injection using a different technique. A suitable next attempt would be to use the `CASE WHEN` statement with a `THEN` clause containing a SQLite sleep function, such as `CASE WHEN (1=1) THEN (SELECT sqlite_version()) ELSE (SELECT sleep(10)) END`.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "1' AND 123=DBMS_PIPE.RECEIVE_MESSAGE('ASD',10)",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '1' AND 123=DBMS_PIPE.RECEIVE_MESSAGE('ASD',10) likely failed due to the database management system being SQLite, which does not support the Oracle-specific DBMS_PIPE.RECEIVE_MESSAGE function, resulting in a syntax error. To bypass this, Beta should try using the SQLite-specific PRAGMA function, such as PRAGMA busy_timeout, or attempt a time-based blind SQL injection using a different technique. A suitable next attempt would be to use the SQLite-specific PRAGMA busy_timeout function.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "1' AND 1337=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2))))",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '1' AND 1337=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2))) likely failed due to the database management system being SQLite, which does not support the Oracle-specific LIKE function with a BLOB argument, resulting in a syntax error. To bypass this, Beta should try using the SQLite-specific REGEXP function, such as REGEXP, or attempt a time-based blind SQL injection using a different technique. A suitable next attempt would be to use the SQLite-specific REGEXP function with a hexadecimal-encoded BLOB argument.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "1' AND 1337=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2)))",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The failed payload '1' AND 1337=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2))) likely failed due to the database management system being SQLite, which does not support the Oracle-specific LIKE function with a BLOB argument, resulting in a syntax error. To bypass this, Beta should try using the SQLite-specific REGEXP function with a hexadecimal-encoded BLOB argument, specifically by replacing the LIKE function with REGEXP and the BLOB argument with a hexadecimal-encoded string.",
+        "outcome": "failed"
+    }
+]
