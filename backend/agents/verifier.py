@@ -48,12 +48,15 @@ Example Output:
         return False, f"Audit execution error: {e}"
 
 @trace(name="Verifier Validation")
-async def run_verifier(target_url, vuln_type, payload, endpoint_path, target_field, broadcast_fn, trace_context=None) -> bool:
+async def run_verifier(target_url, vuln_type, payload, endpoint_path, target_field, broadcast_fn, trace_context=None, override_folder=None) -> bool:
     await broadcast_fn("Reading patched source code for analysis...", "Verifier", "info")
 
     # Dynamic target selection
-    folder = "target_complex" if "5001" in str(target_url) else "target"
-    target_app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", folder, "app.py"))
+    if override_folder:
+        target_app_path = os.path.join(override_folder, "app.py")
+    else:
+        folder = "target_complex" if "5001" in str(target_url) else "target"
+        target_app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", folder, "app.py"))
 
     try:
         with open(target_app_path, "r") as f:

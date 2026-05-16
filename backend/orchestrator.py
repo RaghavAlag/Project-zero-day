@@ -21,6 +21,19 @@ async def run_scan(target_url, vuln_type, broadcast_fn, journal):
     
     await broadcast_fn(f"Starting actual scan against {target_url} for {vuln_type}", "System", "info")
     
+    # PHASE 11: Cloud Flow (Clone -> Deploy -> Scan)
+    cloned_folder = None
+    if "github.com" in str(target_url):
+        from agents.cloner import run_cloner
+        await broadcast_fn("CLOUD MODE DETECTED: Initializing remote ingestion...", "System", "info")
+        cloned_data = await run_cloner(target_url, broadcast_fn)
+        if not cloned_data:
+            await broadcast_fn("Cloud ingestion failed.", "System", "error")
+            return
+        target_url = cloned_data["target_url"]
+        cloned_folder = cloned_data["folder"]
+        await broadcast_fn(f"Repository ingested and deployed to sandbox: {target_url}", "System", "info")
+    
     try:
         # Step 1: Alpha Recon
         alpha_span = trace_step(workflow_id, "ALPHA_RECON", None, {"target": target_url}, "running")
@@ -61,13 +74,31 @@ async def run_scan(target_url, vuln_type, broadcast_fn, journal):
             await broadcast_fn("Breach detected. Activating Blue Swarm for auto-remediation...", "System", "info")
             
             # Architect writes the patch
-            await run_architect(target_url, vuln_type, payload, broadcast_fn)
+            await run_architect(target_url, vuln_type, payload, broadcast_fn, override_folder=cloned_folder)
             
             # Verifier applies the patch and tests it
-            is_secure = await run_verifier(target_url, vuln_type, payload, beta_data["endpoint_path"], beta_data["input_field"], broadcast_fn)
+            is_secure = await run_verifier(target_url, vuln_type, payload, beta_data["endpoint_path"], beta_data["input_field"], broadcast_fn, override_folder=cloned_folder)
             
             if is_secure:
-                await broadcast_fn("SYSTEM SECURED. Zero-Day Pipeline Complete.", "System", "info")
+                await broadcast_fn("SYSTEM SECURED. Zero-Day Pipeline Complete. 🛡️", "System", "info")
+                
+                # PHASE 10: GitHub PR Auto-Generation
+                from agents.pr_agent import run_pr_agent
+                
+                # Identify folder for PR
+                if cloned_folder:
+                    folder_for_pr = "." # If cloned, we are in the root
+                    patched_code = open(os.path.join(cloned_folder, "app.py")).read()
+                else:
+                    folder_for_pr = "target_complex" if "5001" in str(target_url) else "target"
+                    patched_code = open(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", folder_for_pr, "app.py"))).read()
+                
+                await broadcast_fn("Initiating GitHub PR creation...", "System", "info")
+                pr_url = await run_pr_agent(vuln_type, payload, patched_code, folder_for_pr, broadcast_fn)
+                if pr_url:
+                    await broadcast_fn(f"🐙 GitHub PR Ready for Review: {pr_url}", "System", "info")
+                else:
+                    await broadcast_fn("PR creation skipped or failed.", "System", "warning")
             else:
                 await broadcast_fn("REMEDIATION FAILED. Manual intervention required.", "System", "error")
             

@@ -36,12 +36,14 @@ Your task:
     messages = [{"role": "system", "content": prompt}]
     
     # Identify fallback from Alpha Recon
-    default_path = alpha_data.get("endpoints", [{"path": "/login"}])[0]["path"]
-    default_field = "username" # Default heuristic
-    if alpha_data.get("endpoints"):
-        e = alpha_data["endpoints"][0]
-        if e.get("inputs"):
-            default_field = e["inputs"][0]
+    default_path = "/login"
+    default_field = "username"
+    
+    endpoints = alpha_data.get("endpoints", [])
+    if endpoints:
+        default_path = endpoints[0]["path"]
+        if endpoints[0].get("inputs"):
+            default_field = endpoints[0]["inputs"][0]
 
     await broadcast_fn("Designing a SHOTGUN BATCH of 5 diverse payloads...", "Beta", "thinking")
     

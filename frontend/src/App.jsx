@@ -3,6 +3,7 @@ import AttackPanel from './components/AttackPanel';
 import AgentLog from './components/AgentLog';
 import JournalView from './components/JournalView';
 import BreachAlert from './components/BreachAlert';
+import DiffViewer from './components/DiffViewer';
 import './styles/main.css';
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
   const [journal, setJournal] = useState([]);
   const [scanStatus, setScanStatus] = useState('idle');
   const [showBreach, setShowBreach] = useState(false);
+  const [diffData, setDiffData] = useState(null);
   const wsRef = useRef(null);
 
   useEffect(() => {
@@ -32,6 +34,8 @@ function App() {
         setShowBreach(true);
         setScanStatus('breached');
         setTimeout(() => setShowBreach(false), 3500);
+      } else if (data.level === 'diff') {
+        setDiffData(data.extra);
       } else if (data.message === "Red Swarm exhausted all attempts. Target hardened or scope exceeded.") {
         setScanStatus('failed');
       }
@@ -86,6 +90,7 @@ function App() {
   return (
     <>
       <BreachAlert show={showBreach} />
+      <DiffViewer diffData={diffData} onClose={() => setDiffData(null)} />
       <div className="dashboard">
         <AttackPanel onLaunch={handleLaunch} scanStatus={scanStatus} />
         <AgentLog messages={messages} />

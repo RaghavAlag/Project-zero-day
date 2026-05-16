@@ -27,7 +27,7 @@ scan_status = "idle"
 
 active_connections = []
 
-async def send_update(message: str, agent: str, level: str):
+async def send_update(message: str, agent: str, level: str, extra: dict = None):
     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
     update = {
         "agent": agent,
@@ -35,6 +35,8 @@ async def send_update(message: str, agent: str, level: str):
         "level": level,
         "timestamp": timestamp
     }
+    if extra:
+        update["extra"] = extra
     
     global scan_status
     if level == "breach":
