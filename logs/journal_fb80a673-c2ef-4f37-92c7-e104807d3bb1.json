@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": " UNION SELECT 'admin','password' --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed due to a syntax error, indicating that the SQL query is not properly formatted, likely because the 'username' field is not an 'id' field that can be directly union selected with string literals. The context of a login form suggests that the 'username' field is likely being used in a query that expects a specific format or validation, rather than a simple id-based query.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": " OR '' = ",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because it is a non-injurious condition, as the OR operator with an empty string on one side will always evaluate to true, rendering the query ineffective. This is likely due to the application's use of a non-vulnerable SQL query or a proper input validation mechanism that prevents the payload from being executed as intended.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": " OR 1=1;",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload 'OR 1=1;' failed to breach the SQLi vulnerability because it's likely being filtered by a SQL injection prevention mechanism, such as a whitelist or a library like OWASP ESAPI, which blocks common attack patterns like this. This payload is also not suitable for a login/ping form, as it's typically used to inject into an 'id' field, not a 'username' field.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": " OR '' = ",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload 'OR '' = ' failed to breach the SQLi vulnerability because it is a tautology that always evaluates to true, which does not allow the attacker to manipulate the query results. This is likely due to the application's use of a defensive technique such as 'Always True' or 'Always False' to prevent basic SQLi attacks.",
+        "outcome": "failed"
+    }
+]

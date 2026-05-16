@@ -1,10 +1,10 @@
-from flask import Flask, request, jsonify
+import flask
 import sqlite3
 import os
 import subprocess
 import database
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 
 # Initialize DB on startup
 database.init_db()
@@ -16,11 +16,34 @@ def get_db_connection():
 
 @app.route('/', methods=['GET'])
 def index():
-    return "<h1>Project Zero-Day Arena</h1><p>Login or Ping.</p>"
+    return """
+    <html>
+        <head><title>Project Zero-Day Arena</title></head>
+        <body>
+            <h1>Project Zero-Day Arena</h1>
+            <p>Welcome to the testing arena. Below are the available endpoints.</p>
+            
+            <h2>Admin Login Portal</h2>
+            <form action="/login" method="POST" id="login-form">
+                <input type="text" name="username" placeholder="Username" />
+                <input type="password" name="password" placeholder="Password" />
+                <button type="submit">Login</button>
+            </form>
+            
+            <h2>Network Diagnostics Utility</h2>
+            <form action="/ping" method="POST" id="ping-form">
+                <input type="text" name="host" placeholder="Hostname or IP Address" />
+                <button type="submit">Ping Host</button>
+            </form>
+        </body>
+    </html>
+    """
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json or {}
+    data = flask.request.json if flask.request.is_json else flask.request.form
+    if not data:
+        data = {}
     username = data.get('username', '')
     password = data.get('password', '')
     
@@ -31,40 +54,36 @@ def login():
         cursor.execute(query, (username, password))
         rows = cursor.fetchall()
         conn.close()
-        
         if rows:
             users = [dict(row) for row in rows]
-            return jsonify({"status": "success", "user": users})
+            return flask.jsonify({"status": "success", "user": users})
         else:
-            return jsonify({"status": "fail"})
+            return flask.jsonify({"status": "fail"})
     except Exception as e:
         conn.close()
-        return jsonify({"status": "error", "message": str(e)})
+        return flask.jsonify({"status": "error", "message": str(e)})
 
 @app.route('/ping', methods=['POST'])
 def ping():
-    data = request.json or {}
+    data = flask.request.json if flask.request.is_json else flask.request.form
+    if not data:
+        data = {}
     host = data.get('host', '')
     
     if not host:
-        return jsonify({"status": "error", "message": "Host is required"}), 400
+        return flask.jsonify({"status": "error", "message": "Host is required"})
     
-    # Validate host input to prevent potential attacks
-    if not host.replace('.', '').replace('-', '').replace('_', '').isalnum():
-        return jsonify({"status": "error", "message": "Invalid host"}), 400
-    
-    command = ["ping", "-n", "1", host]
     try:
-        output = subprocess.check_output(command).decode('utf-8')
-        return jsonify({"output": output})
+        output = subprocess.check_output(["ping", "-c", "1", host]).decode("utf-8")
+        return flask.jsonify({"output": output})
     except subprocess.CalledProcessError as e:
-        return jsonify({"status": "error", "message": "Failed to ping host"}), 500
+        return flask.jsonify({"status": "error", "message": str(e)})
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return flask.jsonify({"status": "error", "message": str(e)})
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "alive"})
+    return flask.jsonify({"status": "alive"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

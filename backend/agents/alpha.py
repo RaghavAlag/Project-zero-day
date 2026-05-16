@@ -1,21 +1,33 @@
 from .llm_client import call_groq
 from tools.web_search import search_exploits
+from tools.crawler import crawl_target
 import json
 import asyncio
-
 import omium
 
 @omium.trace(name="Alpha Recon")
 async def run_alpha(target_url, vuln_type, journal, broadcast_fn, trace_context=None) -> dict:
     from tracing import trace_step
     
-    await broadcast_fn(f"Initiating recon for {vuln_type} on {target_url}", "Alpha", "info")
+    await broadcast_fn(f"Initiating reconnaissance on {target_url}...", "Alpha", "thinking")
     
+    # ── PHASE 8: INTELLIGENT DISCOVERY (Crawler) ──
+    endpoints = await crawl_target(target_url, trace_context)
+    if endpoints:
+        endpoints_str = json.dumps(endpoints, indent=2)
+        await broadcast_fn(f"Discovery complete. Found {len(endpoints)} attack vectors: {', '.join([e['path'] for e in endpoints])}", "Alpha", "info")
+    else:
+        endpoints_str = "Fallback defaults: /login (POST), /ping (POST)"
+        await broadcast_fn("Discovery failed or blocked. Using fallback heuristics.", "Alpha", "warning")
+        
     prompt = f"""You are Alpha, an elite reconnaissance agent. 
 Target: {target_url}
-Vulnerability: {vuln_type}
+Vulnerability Class: {vuln_type}
 
-Generate 3 specific, targeted web search queries to find real PoC payloads and bypass techniques for this exact environment. 
+DISCOVERED ATTACK SURFACE:
+{endpoints_str}
+
+Generate 3 specific, targeted web search queries to find real PoC payloads and bypass techniques for this exact environment and attack surface. 
 Output ONLY a JSON object with a single key 'queries' containing an array of 3 search query strings."""
     messages = [
         {"role": "system", "content": prompt}
@@ -41,5 +53,4 @@ Output ONLY a JSON object with a single key 'queries' containing an array of 3 s
         await asyncio.sleep(2) # delay between tavily searches
         
     await broadcast_fn(f"Recon complete. Found {len(all_results)} intelligence sources.", "Alpha", "info")
-    return {"queries": queries, "results": all_results}
-
+    return {"queries": queries, "results": all_results, "endpoints": endpoints}

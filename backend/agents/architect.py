@@ -3,11 +3,13 @@ import os
 from tracing import trace
 
 @trace(name="Architect Patch Generation")
-async def run_architect(vuln_type, payload, broadcast_fn, trace_context=None) -> str:
+async def run_architect(target_url, vuln_type, payload, broadcast_fn, trace_context=None) -> str:
     await broadcast_fn("Analyzing vulnerability to design patch...", "Architect", "info")
     
-    # Read vulnerable code
-    target_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "target", "app.py"))
+    # Dynamic target selection
+    folder = "target_complex" if "5001" in str(target_url) else "target"
+    target_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", folder, "app.py"))
+    
     with open(target_path, "r") as f:
         code = f.read()
         
@@ -24,7 +26,8 @@ Your task: Rewrite the source code to perfectly patch this vulnerability.
 - If it's SQLi, use parameterized queries (e.g., `execute("SELECT ... WHERE username=?", (username,))`).
 - If it's CMDi, use proper input validation and the `subprocess` module with a list of arguments.
 - IMPORTANT: Ensure ALL necessary imports (flask, sqlite3, os, subprocess, database) are at the VERY TOP of the file.
-Output ONLY the raw Python code for the completely patched app.py. Do not include markdown formatting."""
+
+CRITICAL RULE: Output ONLY the raw Python code. NO conversational text. NO explanations. NO markdown formatting. Your entire output must be valid, runnable Python code. If you add English text like "Here is the code", the system will crash."""
 
     messages = [{"role": "system", "content": prompt}]
     

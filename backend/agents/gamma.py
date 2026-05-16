@@ -15,7 +15,7 @@ Response Code: {response['status_code']}
 Response Body Snippet: {response['body'][:500]}
 
 Analyze why this payload failed to breach the {vuln_type} vulnerability. 
-If the payload is trying to inject into an 'id' field, remind Beta that this is a login/ping form.
+CRITICAL RULE: If the Response Body contains an SQL "syntax error" or "unrecognized token", it means the payload failed to "break out" of the application's string literal. You MUST explicitly tell Beta: "You are trapped inside a string. Start your next payload with a leading quote (e.g., ' ) to break out of the query structure."
 Output only the technical critique, 2 sentences max."""
 
     messages = [

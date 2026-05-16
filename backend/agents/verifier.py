@@ -9,59 +9,72 @@ TARGET_APP_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "target", "app.py")
 )
 
-VULNERABLE_PATTERNS = [
-    "username='\" + username",
-    "username='\" +",
-    "password='\" + password",
-    "password='\" +",
-    "os.popen",
-]
+from .llm_client import call_groq
 
-SECURE_PATTERNS = [
-    ("?", "execute"),   # parameterized query
-]
-
-def static_analysis(code: str) -> tuple[bool, str]:
+async def ai_security_audit(code: str, vuln_type: str, payload: str) -> tuple[bool, str]:
     """
-    Returns (is_secure, reason).
-    Checks if the code still has known vulnerable patterns.
+    Uses an LLM to perform a professional security audit on the patched code.
+    Returns (is_secure, audit_report).
     """
-    for vp in VULNERABLE_PATTERNS:
-        if vp in code:
-            return False, f"Vulnerable pattern still present: '{vp}'"
-    for must_have, also_have in SECURE_PATTERNS:
-        if must_have in code and also_have in code:
-            return True, "Parameterized query detected. Injection vector eliminated."
-    return True, "No vulnerable patterns detected in patched source."
+    prompt = f"""You are a Senior Application Security Engineer.
+Your task is to audit the following source code to determine if it is vulnerable to {vuln_type}.
+The attacker previously breached the system using this payload: `{payload}`.
 
+SOURCE CODE:
+```python
+{code}
+```
+
+
+EVALUATION CRITERIA:
+- For SQLi: Look for string concatenation (e.g., `query = "..." + input`). This is VULNERABLE. If the code uses parameterized queries (e.g., `query = "...?"` and `execute(query, (input,))`), this is 100% SECURE. You MUST return true for is_secure if parameterized queries are used. Do NOT complain about missing input sanitization or validation if parameterized queries are present, as parameterization is a complete defense against SQLi.
+- For CMDi: Look for direct execution of inputs without validation (e.g., `os.popen`). This is VULNERABLE. If the code uses strong input validation, sanitization, or safe subprocess lists (e.g., `subprocess.run(["ping", host])`), this is SECURE.
+
+Analyze the code and determine if the vulnerability still exists or if it has been properly mitigated.
+You must output ONLY a valid JSON object with two keys:
+1. "is_secure": true or false
+2. "report": A short, professional 2-sentence explanation of your finding. If it is secure, state exactly how the mitigation (like parameterization) works.
+
+Example Output:
+{{"is_secure": true, "report": "The source code now uses SQLite parameterized queries instead of string concatenation. This ensures the malicious input is treated as literal data, effectively mitigating the SQL injection vulnerability."}}"""
+
+    try:
+        import json
+        messages = [{"role": "system", "content": prompt}]
+        response = await call_groq(messages, json_mode=True)
+        data = json.loads(response)
+        return data.get("is_secure", False), data.get("report", "Audit failed to produce a conclusive report.")
+    except Exception as e:
+        return False, f"Audit execution error: {e}"
 
 @trace(name="Verifier Validation")
-async def run_verifier(target_url, vuln_type, payload, broadcast_fn, trace_context=None) -> bool:
+async def run_verifier(target_url, vuln_type, payload, endpoint_path, target_field, broadcast_fn, trace_context=None) -> bool:
     await broadcast_fn("Reading patched source code for analysis...", "Verifier", "info")
 
-    # ── STEP 1: STATIC CODE ANALYSIS ─────────────────────────────────────────
+    # Dynamic target selection
+    folder = "target_complex" if "5001" in str(target_url) else "target"
+    target_app_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", folder, "app.py"))
+
     try:
-        with open(TARGET_APP_PATH, "r") as f:
+        with open(target_app_path, "r") as f:
             patched_code = f.read()
     except Exception as e:
-        await broadcast_fn(f"Could not read patched source: {e}", "Verifier", "error")
+        await broadcast_fn(f"Could not read patched source from {target_app_path}: {e}", "Verifier", "error")
         return False
 
-    is_secure, reason = static_analysis(patched_code)
-    await broadcast_fn(f"Static analysis → {reason}", "Verifier", "info")
-
-    if not is_secure:
-        await broadcast_fn("SAST FAILURE: Patch is insufficient. Vulnerable code still present!", "Verifier", "error")
-        return False
-
-    await broadcast_fn("SAST PASSED ✅ — Vulnerable pattern eliminated from source.", "Verifier", "info")
-
-    # ── STEP 2: LIVE VERIFICATION (best-effort) ───────────────────────────────
+    # ── STEP 1: LIVE VERIFICATION (DAST - The Source of Truth) ───────────────
     await broadcast_fn("Attempting live restart to confirm patch in production...", "Verifier", "thinking")
 
-    # Kill ALL processes on port 5000 (Windows)
+    # Dynamic Port Selection for Process Killing
+    import re
+    port_match = re.search(r':(\d+)', str(target_url))
+    port = port_match.group(1) if port_match else "5000"
+    
+    await broadcast_fn(f"Clearing ghost processes on port {port}...", "Verifier", "thinking")
+
+    # Kill ALL processes on the target port (Windows)
     try:
-        out = subprocess.check_output("netstat -ano | findstr :5000", shell=True).decode()
+        out = subprocess.check_output(f"netstat -ano | findstr :{port}", shell=True).decode()
         pids = set()
         for line in out.split("\n"):
             if "LISTENING" in line:
@@ -76,8 +89,8 @@ async def run_verifier(target_url, vuln_type, payload, broadcast_fn, trace_conte
     except Exception:
         pass
 
-    # Start the patched server (use shell=True to inherit env PATH)
-    target_dir = os.path.dirname(TARGET_APP_PATH)
+    # Start the patched server
+    target_dir = os.path.dirname(target_app_path)
     subprocess.Popen(
         "python app.py",
         cwd=target_dir,
@@ -99,26 +112,40 @@ async def run_verifier(target_url, vuln_type, payload, broadcast_fn, trace_conte
         except Exception:
             pass
 
-    if not server_up:
-        await broadcast_fn(
-            "Live server did not respond. Reporting SECURE based on static analysis.",
-            "Verifier", "info"
-        )
-        return True  # Static analysis passed, trust it
-
-    await broadcast_fn(f"Live server ready. Re-firing original payload: {payload}", "Verifier", "info")
-
-    from tools.http_exploit import fire_payload
-    response = await fire_payload(target_url, vuln_type, payload, trace_context)
-    await broadcast_fn(f"Live response → {response['body'][:120]}", "Verifier", "info")
-
-    if response["is_breach"]:
-        # If SAST passed but live failed, it's likely a ghost process or bypass
-        await broadcast_fn("LIVE TEST FAILED — exploit still works! This might be a ghost process.", "Verifier", "warning")
-        if is_secure:
-            await broadcast_fn("TRUSTING SOURCE CODE ✅ — SAST confirms the vulnerability is physically gone.", "Verifier", "info")
-            return True
-        return False
+    live_secure = False
+    if server_up:
+        await broadcast_fn(f"Live server ready. Re-firing original payload: {payload}", "Verifier", "info")
+        from tools.http_exploit import fire_payload
+        response = await fire_payload(target_url, vuln_type, payload, endpoint_path, target_field, trace_context)
+        await broadcast_fn(f"Live response → {response['body'][:120]}", "Verifier", "info")
+        
+        if response["is_breach"]:
+            await broadcast_fn("LIVE TEST FAILED — exploit still works!", "Verifier", "warning")
+            live_secure = False
+        else:
+            await broadcast_fn("EXPLOIT BLOCKED ✅ — Live test confirmed.", "Verifier", "info")
+            live_secure = True
     else:
-        await broadcast_fn("EXPLOIT BLOCKED ✅ — Live test confirmed. The application is now SECURE.", "Verifier", "info")
-        return True
+        await broadcast_fn("Live server did not respond. Falling back to static analysis.", "Verifier", "warning")
+        # If server didn't start, we have to trust SAST later.
+
+    # ── STEP 2: AI SECURITY AUDITOR (SAST - Commentary & Fallback) ─────────
+    await broadcast_fn("Performing intelligent code analysis for final report...", "Verifier", "thinking")
+    is_secure, report = await ai_security_audit(patched_code, vuln_type, payload)
+    
+    if server_up:
+        # DAST is the source of truth. SAST is just commentary.
+        if live_secure:
+            await broadcast_fn(f"SYSTEM SECURE ✅ — Auditor Report: {report}", "Verifier", "info")
+            return True
+        else:
+            await broadcast_fn(f"SYSTEM VULNERABLE ❌ — Auditor Report: {report}", "Verifier", "error")
+            return False
+    else:
+        # Fallback to SAST
+        if is_secure:
+            await broadcast_fn(f"TRUSTING SOURCE CODE ✅ — Auditor Report: {report}", "Verifier", "info")
+            return True
+        else:
+            await broadcast_fn(f"SAST FAILURE ❌ — Auditor Report: {report}", "Verifier", "error")
+            return False

@@ -1,0 +1,10 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "1' OR 1=1 --",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    }
+]

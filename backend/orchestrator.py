@@ -33,7 +33,7 @@ async def run_scan(target_url, vuln_type, broadcast_fn, journal):
         for attempt in range(1, MAX_RETRIES + 1):
             await asyncio.sleep(2) # delay between agent rounds
             beta_span = trace_step(workflow_id, f"BETA_STRIKE_ATTEMPT_{attempt}", None, {}, "running")
-            beta_data = await run_beta(target_url, vuln_type, alpha_data['results'], journal, broadcast_fn, {"workflow_id": workflow_id, "parent_id": beta_span})
+            beta_data = await run_beta(target_url, vuln_type, alpha_data, journal, broadcast_fn, {"workflow_id": workflow_id, "parent_id": beta_span})
             payload = beta_data["payload"]
             response = beta_data["response"]
             
@@ -61,10 +61,10 @@ async def run_scan(target_url, vuln_type, broadcast_fn, journal):
             await broadcast_fn("Breach detected. Activating Blue Swarm for auto-remediation...", "System", "info")
             
             # Architect writes the patch
-            await run_architect(vuln_type, payload, broadcast_fn)
+            await run_architect(target_url, vuln_type, payload, broadcast_fn)
             
             # Verifier applies the patch and tests it
-            is_secure = await run_verifier(target_url, vuln_type, payload, broadcast_fn)
+            is_secure = await run_verifier(target_url, vuln_type, payload, beta_data["endpoint_path"], beta_data["input_field"], broadcast_fn)
             
             if is_secure:
                 await broadcast_fn("SYSTEM SECURED. Zero-Day Pipeline Complete.", "System", "info")
